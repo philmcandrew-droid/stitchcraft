@@ -59,6 +59,7 @@ const GridRow = memo(function GridRow({
           <Pressable
             key={cellIndex}
             onPress={() => onPress(x, y)}
+            delayPressIn={Platform.OS === 'android' ? 0 : undefined}
             style={({ pressed }) => [
               styles.cell,
               {
@@ -126,7 +127,7 @@ export function PatternGrid({
           initialNumToRender={28}
           maxToRenderPerBatch={16}
           windowSize={7}
-          removeClippedSubviews={Platform.OS === 'android'}
+          removeClippedSubviews={false}
           style={{ width: width * cellSize, height: viewportH }}
           nestedScrollEnabled
         />

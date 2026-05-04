@@ -1,5 +1,5 @@
 import { decode } from 'jpeg-js';
-import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync } from 'expo-file-system/legacy';
 
 import { deltaE76, hexToRgb, nearestIndexByDeltaE, rgbToLab } from '@/lib/colorLab';
 import { MASTER_PALETTE, MASTER_PALETTE_LAB } from '@/lib/dmcPalette';
@@ -102,8 +102,7 @@ export async function jpegFileUriToPattern(opts: {
   const th = Math.max(2, Math.floor(targetHeight));
   const k = Math.max(2, Math.min(maxColours, 48));
 
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
-  const bytes = base64ToUint8Array(base64);
+  const bytes = await uriToJpegBytes(uri);
   const raw = decode(bytes, {
     useTArray: true,
     formatAsRGBA: true,
@@ -187,4 +186,24 @@ function labToRgbApprox(lab: [number, number, number]): [number, number, number]
     return Math.round(Math.min(255, Math.max(0, c * 255)));
   };
   return [comp(r), comp(g), comp(b)];
+}
+
+/** JPEG bytes from a library/manipulator URI (web blob/https, native file://). */
+async function uriToJpegBytes(uri: string): Promise<Uint8Array> {
+  if (uri.startsWith('data:image')) {
+    const i = uri.indexOf(',');
+    if (i === -1) throw new Error('Invalid data URL.');
+    const meta = uri.slice(0, i);
+    if (!meta.includes('jpeg') && !meta.includes('jpg')) {
+      throw new Error('Please use a JPEG-based export; try picking the photo again.');
+    }
+    return base64ToUint8Array(uri.slice(i + 1));
+  }
+  if (uri.startsWith('blob:') || uri.startsWith('http://') || uri.startsWith('https://')) {
+    const res = await fetch(uri);
+    if (!res.ok) throw new Error(`Could not read the image (${res.status}).`);
+    return new Uint8Array(await res.arrayBuffer());
+  }
+  const b64 = await readAsStringAsync(uri, { encoding: 'base64' });
+  return base64ToUint8Array(b64);
 }

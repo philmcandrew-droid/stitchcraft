@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">StitchCraft</string>
+    <string name="title_activity_main">StitchCraft</string>
+    <string name="package_name">com.philmcandrewdroid.stitchcraft</string>
+    <string name="custom_url_scheme">com.philmcandrewdroid.stitchcraft</string>
+</resources>

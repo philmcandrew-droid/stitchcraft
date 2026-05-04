@@ -1,6 +1,7 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -37,7 +38,7 @@ export default function ConvertScreen() {
     return { w, h, colours };
   }, [wStr, hStr, colourStr]);
 
-  const onPhoto = async () => {
+  const onPhoto = useCallback(async () => {
     setBusy(true);
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -48,12 +49,17 @@ export default function ConvertScreen() {
       const picked = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 1,
+        base64: true,
       });
-      if (picked.canceled || !picked.assets?.[0]?.uri) return;
+      if (picked.canceled || !picked.assets?.[0]) return;
 
       const asset = picked.assets[0];
+      const mime = asset.mimeType ?? 'image/jpeg';
+      const isHeic = /heic|heif/i.test(mime);
+      const sourceUri =
+        asset.base64 && !isHeic ? `data:${mime};base64,${asset.base64}` : asset.uri;
       const manipulated = await ImageManipulator.manipulateAsync(
-        asset.uri,
+        sourceUri,
         [{ resize: { width: Math.min(1200, asset.width ?? 1200) } }],
         { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG },
       );
@@ -66,12 +72,13 @@ export default function ConvertScreen() {
       });
       const id = createProject(`From a photo · ${new Date().toLocaleDateString()}`, parsed.w, parsed.h);
       importPattern(id, parsed.w, parsed.h, design, palette);
+      router.push('/(tabs)/designer');
     } catch (e) {
       Alert.alert('Something went wrong', e instanceof Error ? e.message : 'Could not read that JPEG.');
     } finally {
       setBusy(false);
     }
-  };
+  }, [createProject, importPattern, parsed.colours, parsed.h, parsed.w]);
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
@@ -114,10 +121,17 @@ export default function ConvertScreen() {
         <Pressable
           style={[styles.btn, { backgroundColor: c.tint }, busy && styles.btnDisabled]}
           disabled={busy}
-          onPress={() => {
-            const { design, palette } = buildDemoConversion(parsed.w, parsed.h, parsed.colours);
-            const id = createProject(`Soft demo · ${new Date().toLocaleDateString()}`, parsed.w, parsed.h);
-            importPattern(id, parsed.w, parsed.h, design, palette);
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const seed = Date.now();
+              const { design, palette } = buildDemoConversion(parsed.w, parsed.h, parsed.colours, seed);
+              const id = createProject(`Soft demo · ${seed}`, parsed.w, parsed.h);
+              importPattern(id, parsed.w, parsed.h, design, palette);
+              router.push('/(tabs)/designer');
+            } finally {
+              setBusy(false);
+            }
           }}>
           <Text style={styles.btnText}>Try a soft demo pattern</Text>
         </Pressable>

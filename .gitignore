@@ -37,6 +37,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
+# Expo prebuild (optional native RN shell — not used for Capacitor APK path)
 /ios
-/android
+
+# Capacitor: commit `android/`; keep machine-specific SDK path out of git
+android/local.properties

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { PatternGrid } from '@/components/PatternGrid';
@@ -44,18 +44,27 @@ export default function TrackerScreen() {
   const stats = projectStats(activeProject);
   const colours = stats.byPaletteIndex.filter((row) => row.total > 0);
 
-  const onCell = (x: number, y: number) => {
-    if (rectMode) {
-      if (!rectAnchor) {
-        setRectAnchor({ x, y });
+  const onCell = useCallback(
+    (x: number, y: number) => {
+      if (rectMode) {
+        if (!rectAnchor) {
+          setRectAnchor({ x, y });
+          return;
+        }
+        completeRectStitches(activeProject.id, rectAnchor.x, rectAnchor.y, x, y);
+        setRectAnchor(null);
         return;
       }
-      completeRectStitches(activeProject.id, rectAnchor.x, rectAnchor.y, x, y);
-      setRectAnchor(null);
-      return;
-    }
-    toggleStitched(activeProject.id, x, y);
-  };
+      toggleStitched(activeProject.id, x, y);
+    },
+    [
+      activeProject.id,
+      completeRectStitches,
+      rectAnchor,
+      rectMode,
+      toggleStitched,
+    ],
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
