@@ -1,0 +1,17 @@
+# Render Blueprint — static Expo web export (https://render.com/docs/static-sites)
+# After this file is on GitHub: Dashboard → New → Blueprint → pick repo, or link an existing Static Site to this repo.
+services:
+  - type: web
+    name: stitchcraft
+    runtime: static
+    branch: main
+    buildCommand: npm ci && npm run build:web
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22.14.0"
+      # Optional: bake OpenRouter into the static bundle (set in Dashboard → Environment if you prefer not to commit secrets)
+      # - key: EXPO_PUBLIC_OPENROUTER_API_KEY
+      #   sync: false
+      # - key: EXPO_PUBLIC_OPENROUTER_IMAGE_MODEL
+      #   value: google/gemini-2.5-flash-image
